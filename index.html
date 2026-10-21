@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trading Dashboard — Manage &amp; Acquire</title>
+<style>
+  :root{
+    --bg:#0c0f14; --panel:#141922; --panel2:#1a2030; --line:#262f42;
+    --text:#e8edf5; --muted:#93a0b4; --faint:#5d6a80;
+    --green:#3fb96f; --red:#e05d5d; --amber:#e0a83e; --blue:#4f8fdd;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:18px 14px 40px}
+  header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px;margin-bottom:6px}
+  h1{font-size:22px;margin:0;font-weight:650;letter-spacing:.2px}
+  .sub{color:var(--muted);font-size:13px;margin-top:3px}
+  .fresh{text-align:right;font-size:13px;color:var(--muted)}
+  .fresh .stamp{color:var(--text);font-weight:600}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:1px}
+  .dot.live{background:var(--green)} .dot.carried{background:var(--amber)} .dot.stale{background:var(--red)}
+  .dot.g{background:var(--green)} .dot.a{background:var(--amber)} .dot.r{background:var(--red)} .dot.p{background:var(--faint)}
+  .banner{border:1px solid var(--amber);color:#f3d9a4;background:rgba(224,168,62,.08);
+    border-radius:10px;padding:9px 12px;font-size:13px;margin:10px 0 4px;display:none}
+  .tabs{display:flex;gap:8px;margin:16px 0 4px;flex-wrap:wrap}
+  .tab{appearance:none;background:var(--panel);color:var(--muted);border:1px solid var(--line);
+    border-radius:99px;padding:9px 22px;font-size:15px;font-weight:650;cursor:pointer}
+  .tab.active{background:var(--blue);border-color:var(--blue);color:#fff}
+  .totals{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:14px 0 8px}
+  .total{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .total .k{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.6px}
+  .total .v{font-size:21px;font-weight:650;margin-top:4px}
+  .total .s{color:var(--faint);font-size:12px;margin-top:2px;line-height:1.45}
+  .capbar{height:7px;background:var(--panel2);border-radius:99px;margin-top:9px;position:relative}
+  .capbar .fill{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:var(--red)}
+  h2{font-size:15px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin:24px 0 10px}
+  h2 .plain{text-transform:none;letter-spacing:0;font-size:13px;color:var(--faint);font-weight:400}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 15px}
+  .card.pending{border-style:dashed;background:rgba(79,143,221,.04)}
+  .card .top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+  .card .label{font-size:18px;font-weight:700}
+  .basket{color:var(--muted);font-size:13px;margin-top:1px}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .chip{font-size:11px;padding:2px 8px;border-radius:99px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+  .chip.risk-low{border-color:var(--green);color:var(--green);font-weight:700}
+  .chip.risk-med{border-color:var(--amber);color:var(--amber);font-weight:700}
+  .chip.risk-high{border-color:var(--red);color:var(--red);font-weight:700}
+  .chip.t-green{border-color:var(--green);color:var(--green)}
+  .chip.t-amber{border-color:var(--amber);color:var(--amber)}
+  .chip.t-red{border-color:var(--red);color:var(--red);font-weight:700}
+  .chip.good{border-color:var(--green);color:var(--green)}
+  .chip.warn{border-color:var(--amber);color:var(--amber)}
+  .bal{font-size:27px;font-weight:700;margin:9px 0 2px}
+  .daypnl{font-size:14px;font-weight:600}
+  .pos{color:var(--green)} .neg{color:var(--red)} .zero{color:var(--muted)}
+  .daymeta{color:var(--faint);font-size:12px;margin-left:6px;font-weight:400}
+  .bar{position:relative;height:8px;background:var(--panel2);border-radius:99px;margin:13px 0 6px}
+  .bar .fill{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:var(--green)}
+  .bar .fill.amber{background:var(--amber)} .bar .fill.red{background:var(--red)}
+  .barlabels{display:flex;justify-content:space-between;font-size:11px;color:var(--faint)}
+  .rows{margin-top:10px;border-top:1px solid var(--line);padding-top:9px;display:grid;gap:5px}
+  .row{display:flex;justify-content:space-between;font-size:13px;gap:10px}
+  .row .k{color:var(--muted)} .row .v{font-weight:600;text-align:right}
+  .daydots{font-size:15px;letter-spacing:3px;color:var(--blue)}
+  .note{color:var(--faint);font-size:12px;margin-top:9px;line-height:1.45}
+  .infobox{border:1px dashed var(--line);border-radius:12px;padding:12px 14px;color:var(--muted);font-size:13px;line-height:1.6;background:rgba(79,143,221,.05)}
+  .infobox b{color:var(--text)}
+  .prow{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline;background:var(--panel);
+    border:1px solid var(--line);border-radius:12px;padding:11px 14px;margin-bottom:8px}
+  .prow .plabel{font-size:16px;font-weight:700;min-width:86px}
+  .prow .pbal{font-size:16px;font-weight:650}
+  .prow .pmeta{color:var(--muted);font-size:12.5px}
+  .prow .pnext{width:100%;font-size:13px;color:var(--text)}
+  .prow .pnext .k{color:var(--faint)}
+  .stage{font-size:11px;padding:2px 8px;border-radius:99px;border:1px solid var(--blue);color:var(--blue);white-space:nowrap;font-weight:650}
+  .stage.speed{border-color:var(--amber);color:var(--amber)}
+  .stage.reserve{border-color:var(--faint);color:var(--muted)}
+  footer{color:var(--faint);font-size:12px;margin-top:26px;line-height:1.6}
+  .err{border:1px solid var(--red);color:#f2b8b8;border-radius:10px;padding:12px;font-size:14px;display:none}
+  .view{display:none} .view.active{display:block}
+  @media (max-width:560px){ .bal{font-size:24px} h1{font-size:19px} .fresh{text-align:left} .prow .plabel{min-width:70px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Trading Dashboard</h1>
+      <div class="sub">Two jobs: look after the 8 paid accounts · bring in new ones</div>
+    </div>
+    <div class="fresh" id="fresh">Loading…</div>
+  </header>
+
+  <div class="banner" id="feedBanner"></div>
+  <div class="err" id="loadErr">Could not load data.json — the publisher may not have run yet.</div>
+
+  <div class="tabs">
+    <button class="tab" id="tab-manage" onclick="setView('manage')">Manage — the 8 PAs</button>
+    <button class="tab" id="tab-acquire" onclick="setView('acquire')">Acquire — FullPort &amp; funnel</button>
+  </div>
+
+  <!-- ================= MANAGE ================= -->
+  <div class="view" id="view-manage">
+    <div class="totals" id="fleetStrip"></div>
+    <h2>The 8 accounts <span class="plain">— each runs a different strategy, on purpose</span></h2>
+    <div class="grid" id="fleetGrid"></div>
+    <div style="height:12px"></div>
+    <div class="infobox" id="tierLegend"></div>
+  </div>
+
+  <!-- ================= ACQUIRE ================= -->
+  <div class="view" id="view-acquire">
+    <div class="totals" id="scoreStrip"></div>
+    <div class="infobox" id="acquireRule"></div>
+    <div id="pipelineBox"></div>
+  </div>
+
+  <footer id="footer"></footer>
+</div>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const money = (v) => (v == null ? "—" : "$" + Number(v).toLocaleString("en-US",{minimumFractionDigits:2, maximumFractionDigits:2}));
+const signed = (v) => (v == null ? "—" : (v > 0 ? "+" : v < 0 ? "−" : "") + "$" + Math.abs(Number(v)).toLocaleString("en-US",{minimumFractionDigits:2, maximumFractionDigits:2}));
+const pnlClass = (v) => v == null ? "zero" : (v > 0 ? "pos" : (v < 0 ? "neg" : "zero"));
+const fmtDate = (iso, opts) => {
+  if (!iso) return "—";
+  const d = new Date(iso.length <= 10 ? iso + "T12:00:00" : iso);
+  return d.toLocaleDateString("en-US", Object.assign({weekday:"short", month:"short", day:"numeric"}, opts||{}));
+};
+const fmtStamp = (iso) => {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleString("en-US",{timeZone:"America/Denver", weekday:"short", month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
+};
+
+let currentView = "manage";
+function setView(v){
+  currentView = v;
+  ["manage","acquire"].forEach(k => {
+    $("view-" + k).classList.toggle("active", k === v);
+    $("tab-" + k).classList.toggle("active", k === v);
+  });
+  try { history.replaceState(null, "", "#" + v); } catch(e) {}
+}
+
+const TIER_WORD = {green:"Comfortable", amber:"Watch", red:"Tight"};
+function riskChip(s){
+  const cls = s.risk === "LOW" ? "risk-low" : (s.risk === "HIGH" ? "risk-high" : "risk-med");
+  return '<span class="chip ' + cls + '">' + s.risk + " risk" + (s.riskProvisional ? " · provisional" : "") + "</span>";
+}
+
+function liveCard(s){
+  const tierCls = s.tier || "green";
+  const pct = Math.max(0, Math.min(100, (s.headroom || 0) / 2600 * 100));
+  const dots = "●".repeat(Math.min(s.qualifyingDays || 0, s.daysNeeded || 5)) +
+               "○".repeat(Math.max(0, (s.daysNeeded || 5) - (s.qualifyingDays || 0)));
+  const chips = [riskChip(s),
+    '<span class="chip t-' + tierCls + '">' + (TIER_WORD[tierCls] || "") + " cushion</span>"];
+  if (s.balanceCarried) chips.push('<span class="chip warn">Carried close</span>');
+  if (s.payoutEligible) chips.push('<span class="chip good">Payout eligible</span>');
+  if (s.dormancyDaysSince != null && s.dormancyDaysSince >= 15)
+    chips.push('<span class="chip warn">No +$50 day in ' + s.dormancyDaysSince + "d</span>");
+  let rows =
+    '<div class="row"><span class="k">Floor (Apex kills it below this)</span><span class="v">' + money(s.floor) + "</span></div>" +
+    '<div class="row"><span class="k">Room left over the floor</span><span class="v">' + money(s.headroom) + "</span></div>" +
+    '<div class="row"><span class="k">Payout days (≥ +$250)</span><span class="v">' + (s.qualifyingDays ?? "—") + " / " + (s.daysNeeded || 5) +
+      ' &nbsp;<span class="daydots">' + dots + "</span></span></div>" +
+    '<div class="row"><span class="k">Still needed to reach $52,600</span><span class="v">' +
+      (s.toPayoutBalance > 0 ? money(s.toPayoutBalance) : "Reached ✓") + "</span></div>" +
+    '<div class="row"><span class="k">Strategy\'s worst drop in testing</span><span class="v">' + money(s.testedDD) + "</span></div>" +
+    '<div class="row"><span class="k">Master terminal</span><span class="v">' + s.master + "</span></div>";
+  return '<div class="card"><div class="top"><div><div class="label">' + s.slot + '</div><div class="basket">' +
+      s.basket + " · " + s.legs + '</div></div><div class="chips">' + chips.join("") + "</div></div>" +
+    '<div class="bal">' + money(s.balance) + "</div>" +
+    '<div class="daypnl ' + pnlClass(s.dayPnl) + '">' + signed(s.dayPnl) +
+      '<span class="daymeta">today · ' + fmtDate(s.dayDate) + (s.dayInProgress ? " · in progress" : "") + "</span></div>" +
+    '<div class="bar"><div class="fill ' + (tierCls === "green" ? "" : tierCls) + '" style="width:' + pct.toFixed(1) + '%"></div></div>' +
+    '<div class="barlabels"><span>floor ' + money(s.floor) + '</span><span>room: ' + money(s.headroom) + "</span></div>" +
+    '<div class="rows">' + rows + "</div>" +
+    (s.masterNote ? '<div class="note">' + s.masterNote + "</div>" : "") +
+    "</div>";
+}
+
+function pendingCard(s){
+  const chips = [riskChip(s), '<span class="chip">Passed · not yet activated</span>'];
+  let rows =
+    '<div class="row"><span class="k">Passed FullPort at</span><span class="v">' + money(s.evalBalance) + "</span></div>" +
+    '<div class="row"><span class="k">Starts at (fresh PA)</span><span class="v">' + money(s.startsAt) + "</span></div>" +
+    '<div class="row"><span class="k">Room over its $48,000 floor</span><span class="v">' + money(s.headroomAtStart) + "</span></div>" +
+    '<div class="row"><span class="k">Activation fee</span><span class="v">' + money(s.activationFee) + "</span></div>" +
+    '<div class="row"><span class="k">Strategy\'s worst drop in testing</span><span class="v">' + money(s.testedDD) + "</span></div>" +
+    '<div class="row"><span class="k">Master terminal</span><span class="v">' + s.master + "</span></div>";
+  return '<div class="card pending"><div class="top"><div><div class="label">' + s.slot +
+      ' <span style="color:var(--faint);font-size:13px;font-weight:500">(eval ' + s.evalLabel + ')</span></div><div class="basket">' +
+      s.basket + " · " + s.legs + '</div></div><div class="chips">' + chips.join("") + "</div></div>" +
+    '<div class="bal" style="color:var(--muted)">Not started yet</div>' +
+    '<div class="daypnl zero">Next step: Kwesi pays the $129 activation<span class="daymeta">7-day window from the Oct 21 pass</span></div>' +
+    '<div class="rows">' + rows + "</div>" +
+    '<div class="note">' + s.gate + ". " + s.masterNote + "</div>" +
+    "</div>";
+}
+
+function pipelineSection(g){
+  const stageCls = g.group === "passed" ? "" : (g.group === "speedrun" ? " speed" : " reserve");
+  const rows = g.rows.map(r =>
+    '<div class="prow"><span class="plabel">' + r.label + '</span>' +
+    '<span class="stage' + stageCls + '">' + r.stage + "</span>" +
+    '<span class="pbal">' + money(r.balance) + "</span>" +
+    (r.dayPnl ? '<span class="' + pnlClass(r.dayPnl) + '" style="font-size:13px;font-weight:600">' + signed(r.dayPnl) + " today</span>" : "") +
+    '<span class="pmeta">Rides: ' + r.assignment + "</span>" +
+    '<span class="pmeta">' + r.expires + "</span>" +
+    '<span class="pnext"><span class="k">Next: </span>' + r.nextAction + "</span></div>").join("");
+  return "<h2>" + g.title + '</h2><div class="note" style="margin:-4px 0 10px">' + g.blurb + "</div>" + rows;
+}
+
+function render(d){
+  const stateWord = {live:"Live", carried:"Carried — NT disconnected", stale:"Stale"}[d.feedState] || d.feedState;
+  $("fresh").innerHTML = '<span class="dot ' + d.feedState + '"></span><span class="stamp">' + stateWord + "</span><br>" +
+    "NT snapshot: " + fmtStamp(d.snapshotAtDenver) + " MDT<br>" +
+    '<span style="color:var(--faint)">Page data built ' + fmtStamp(d.builtAt) + " MDT · refreshes itself</span>";
+  const banner = $("feedBanner");
+  if (d.feedState !== "live"){ banner.style.display = "block"; banner.textContent = d.feedNote; }
+  else banner.style.display = "none";
+
+  const f = d.fleet, ac = d.acquire;
+  if (!f || !ac){ $("loadErr").style.display = "block"; return; }
+  const tc = f.tierCounts || {green:0, amber:0, red:0};
+  const liveSlots = f.slots.filter(s => s.state === "live" && s.balance != null);
+  const closest = liveSlots.filter(s => s.toPayoutBalance != null)
+    .sort((x,y) => x.toPayoutBalance - y.toPayoutBalance)[0];
+  const gov = f.governor;
+
+  // ---- Manage: fleet strip ----
+  $("fleetStrip").innerHTML =
+    '<div class="total"><div class="k">Fleet today (the live PAs)</div><div class="v ' + pnlClass(f.paDayPnl) + '">' + signed(f.paDayPnl) + "</div>" +
+      '<div class="s">Daily loss cap is −' + money(f.cap) + " for all PAs together" +
+      (gov ? " · risk governor (log-only): " + (gov.level === "ok" ? "no crossings" : gov.level) : "") + "</div>" +
+      '<div class="capbar"><div class="fill" style="width:' + (f.capUsedPct || 0) + '%"></div></div>' +
+      '<div class="s">' + (f.paDayPnl < 0 ? f.capUsedPct + "% of the cap used" : "cap untouched so far today") + "</div></div>" +
+    '<div class="total"><div class="k">Money in live PAs</div><div class="v">' + money(f.paBalanceTotal) + '</div><div class="s">' +
+      f.liveCount + " live · " + f.pendingCount + " passed and waiting for activation</div></div>" +
+    '<div class="total"><div class="k">Cushion check</div><div class="v" style="font-size:16px;line-height:1.5">' +
+      '<span class="dot g"></span>' + tc.green + " comfortable<br>" +
+      '<span class="dot a"></span>' + tc.amber + " watch<br>" +
+      '<span class="dot r"></span>' + tc.red + " tight</div>" +
+      '<div class="s">room left over each account\'s floor</div></div>' +
+    (f.nextPayoutEstimate ? '<div class="total"><div class="k">Next payout</div><div class="v" style="font-size:17px">' + f.nextPayoutEstimate.label + "</div>" +
+      '<div class="s">' + f.nextPayoutEstimate.detail + "</div></div>" : "") +
+    (closest ? '<div class="total"><div class="k">Closest right now</div><div class="v" style="font-size:17px">' + closest.slot + '</div><div class="s">' +
+      (closest.toPayoutBalance > 0 ? money(closest.toPayoutBalance) + " of balance to the payout gate · " : "balance gate met · ") +
+      (closest.qualifyingDays ?? "—") + "/" + (closest.daysNeeded || 5) + " payout days banked</div></div>" : "");
+
+  $("fleetGrid").innerHTML = f.slots.map(s => s.state === "live" ? liveCard(s) : pendingCard(s)).join("");
+
+  $("tierLegend").innerHTML = "<b>How to read the cushion colors:</b> room over the floor " +
+    (f.tiers || []).map(t => "· <b>" + t.label + "</b> — " + t.rule).join(" ") +
+    "<br><b>Risk badges</b> come from the approved fleet ratings: no basket in this fleet is HIGH risk (the high-risk ones were left out on purpose). " +
+    "<b>Provisional</b> means the strategy's true worst drop hasn't been measured intraday yet — it goes live only after that check.";
+
+  // ---- Acquire ----
+  const fp = ac.fullport, am = ac.activationMoney || {};
+  $("scoreStrip").innerHTML =
+    '<div class="total"><div class="k">FullPort passes</div><div class="v">' + fp.passes + " of " + fp.shots + '</div><div class="s">' + fp.winRatePct + "% of shots passed</div></div>" +
+    '<div class="total"><div class="k">Trial total so far</div><div class="v ' + pnlClass(fp.cumulative) + '">' + signed(fp.cumulative) + '</div><div class="s">all FullPort shots combined</div></div>' +
+    '<div class="total"><div class="k">One win / one loss</div><div class="v" style="font-size:16px"><span class="pos">' + signed(fp.winNet) + '</span> / <span class="neg">' + signed(fp.lossNet) + '</span></div><div class="s">per shot, after fees</div></div>' +
+    '<div class="total"><div class="k">Activation money set aside</div><div class="v">' + money(am.setAside) + '</div><div class="s">' +
+      money(am.totalForFive) + " activates the 5 new PAs (" + money(am.perPA) + " each) · " + money(am.remainingAfterFive) + " left after</div></div>";
+  $("acquireRule").innerHTML = "<b>The acquisition rules:</b> " + fp.rule + " " + (am.note || "");
+  $("pipelineBox").innerHTML = ac.pipeline.map(pipelineSection).join("");
+
+  $("footer").innerHTML =
+    "Source: NinjaTrader snapshot feed on the trading VM (every 60 s), pulled by the watchdog. Balances, floors, room over the floor, day results and payout days are live from that feed; " +
+    "account balances that read $0.00 mean NT was disconnected and are never shown — the last recorded close is carried instead.<br>" +
+    "Strategies, risk ratings and the pipeline stages are the approved fleet plan (Oct 21). Floor rule: " + d.rules.floor +
+    " · Cushion colors: " + d.rules.cushionTiers + " · Fleet cap: " + d.rules.fleetCap + ".<br>" +
+    "This page is read-only. It changes nothing on any account.";
+}
+
+function load(){
+  fetch("data.json?ts=" + Date.now(), {cache:"no-store"})
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(d => { $("loadErr").style.display = "none"; render(d); })
+    .catch(() => { $("loadErr").style.display = "block"; });
+}
+const hash = (location.hash || "").slice(1);
+const startView = hash === "acquire" || hash === "eval" ? "acquire" : "manage";
+setView(startView);
+load();
+setInterval(load, 60000);
+</script>
+</body>
+</html>
