@@ -1,0 +1,44 @@
+name: Publish dashboard
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/30 * * * *"
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Checkout page shell
+        uses: actions/checkout@v4
+        with:
+          path: shell
+      - name: Checkout data
+        uses: actions/checkout@v4
+        with:
+          repository: AHappyPanda0192/auto-trading
+          token: ${{ secrets.DATA_TOKEN }}
+          path: data
+      - name: Assemble site
+        run: |
+          mkdir -p site
+          cp shell/index.html site/index.html
+          cp data/data.json site/data.json
+          touch site/.nojekyll
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - name: Deploy
+        id: deploy
+        uses: actions/deploy-pages@v4
